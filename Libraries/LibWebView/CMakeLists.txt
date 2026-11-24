@@ -86,6 +86,7 @@ set(SOURCES
     URL.cpp
     UpdateCheck.cpp
     UserAgent.cpp
+    UserScripts.cpp
     Utilities.cpp
     VideoDecoderServerControlClient.cpp
     ViewImplementation.cpp

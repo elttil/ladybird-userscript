@@ -44,6 +44,7 @@
 #include <LibWebView/TabPerformanceMonitor.h>
 #include <LibWebView/URL.h>
 #include <LibWebView/UserAgent.h>
+#include <LibWebView/UserScripts.h>
 #include <LibWebView/ViewImplementation.h>
 #include <LibWebView/WebContentClient.h>
 #include <LibWebView/WebDriverBiDi.h>
@@ -396,6 +397,12 @@ void ViewImplementation::did_change_active_document(Badge<CanonicalTraversable>)
     set_title(Utf16String::from_utf8(url().serialize()));
     set_favicon({});
     did_update_url();
+
+    // Out-of-tree patch: see UserScripts.h.
+    if (auto page = traversable().display_page()) {
+        for (auto const& source : user_script_sources_for(url()))
+            page->async_run_javascript(source);
+    }
 }
 
 void ViewImplementation::update_displayed_url()
