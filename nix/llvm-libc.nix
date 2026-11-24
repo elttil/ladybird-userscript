@@ -4,11 +4,11 @@
   lib,
   stdenvNoCC,
   fetchurl,
-  src,
+  overlayPorts,
 }:
 
 let
-  port = "${src}/Meta/CMake/vcpkg/overlay-ports/llvm-libc";
+  port = "${overlayPorts}/llvm-libc";
   rev = (lib.importJSON "${port}/vcpkg.json").version-string;
   sha512 = lib.head (builtins.match ".*SHA512 ([0-9a-f]+).*" (builtins.readFile "${port}/portfile.cmake"));
 in
