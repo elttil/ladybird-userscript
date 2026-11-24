@@ -285,7 +285,9 @@ Vector<String> user_script_sources_for(URL::URL const& url)
             continue;
         }
 
-        auto file_name = LexicalPath::basename(path);
+        // File names need not be UTF-8, but the script's name and the key that marks it as run are strings.
+        auto file_name_string = String::from_utf8_with_replacement_character(LexicalPath::basename(path));
+        auto file_name = file_name_string.bytes_as_string_view();
         auto source_view = source.value().bytes_as_string_view();
         auto script = parse_metadata(source_view, file_name);
         if (!script.has_value()) {
