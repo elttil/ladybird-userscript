@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <AK/ByteString.h>
+#include <AK/Error.h>
 #include <AK/String.h>
 #include <AK/Vector.h>
 #include <LibURL/Forward.h>
@@ -29,5 +31,11 @@ namespace WebView {
 //
 // Returns the JavaScript to run in the document at the given URL, one string for each script that applies.
 WEBVIEW_API Vector<String> user_script_sources_for(URL::URL const&);
+
+// The folder userscripts are read from. It may not exist yet.
+WEBVIEW_API ByteString user_scripts_directory();
+
+// Creates the userscripts folder if it does not exist yet, and opens it in the system's file manager.
+WEBVIEW_API ErrorOr<void> show_user_scripts_directory();
 
 }

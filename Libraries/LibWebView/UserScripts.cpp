@@ -7,7 +7,9 @@
 #include <AK/QuickSort.h>
 #include <AK/StringBuilder.h>
 #include <LibCore/DirIterator.h>
+#include <LibCore/Directory.h>
 #include <LibCore/File.h>
+#include <LibCore/Process.h>
 #include <LibFileSystem/FileSystem.h>
 #include <LibURL/URL.h>
 #include <LibWebView/Application.h>
@@ -225,13 +227,41 @@ static ErrorOr<String> read_script(StringView path)
     return String::from_utf8(source);
 }
 
+ByteString user_scripts_directory()
+{
+    return LexicalPath::join(Application::profile().paths().config, "UserScripts"sv).string();
+}
+
+ErrorOr<void> show_user_scripts_directory()
+{
+#if defined(AK_OS_WINDOWS)
+    return Error::from_string_literal("Opening the userscripts folder is not supported on this platform yet");
+#else
+    auto directory = user_scripts_directory();
+    TRY(Core::Directory::create(directory, Core::Directory::CreateDirectories::Yes, 0700));
+
+    // Like CrashReportStore, hand the folder to whatever the user's system opens folders with.
+    Vector<ByteString> arguments { directory };
+#    if defined(AK_OS_MACOS)
+    TRY(Core::Process::spawn("/usr/bin/open"sv, arguments));
+#    else
+    TRY(Core::Process::spawn({
+        .executable = "xdg-open"sv,
+        .search_for_executable_in_path = true,
+        .arguments = arguments,
+    }));
+#    endif
+    return {};
+#endif
+}
+
 Vector<String> user_script_sources_for(URL::URL const& url)
 {
     Vector<String> sources;
     if (!url.scheme().is_one_of("http"sv, "https"sv))
         return sources;
 
-    auto directory = LexicalPath::join(Application::profile().paths().config, "UserScripts"sv).string();
+    auto directory = user_scripts_directory();
     if (!FileSystem::is_directory(directory))
         return sources;
 

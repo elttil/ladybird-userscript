@@ -20,6 +20,7 @@
 #include <LibWebView/DefaultBrowser.h>
 #include <LibWebView/PermissionManager.h>
 #include <LibWebView/SearchEngine.h>
+#include <LibWebView/UserScripts.h>
 #include <LibWebView/WebContentClient.h>
 #include <LibWebView/WebUI/SettingsUI.h>
 
@@ -142,6 +143,21 @@ void SettingsUI::register_interfaces()
         }
         auto result = CrashReportStore::the().show_directory();
         async_send_message("crashReportsStatus"sv, result.is_error() ? "Could not open the crash reports folder."_string : String {});
+    });
+
+    // Out-of-tree patch: see UserScripts.h.
+    register_interface("loadUserScriptsDirectory"sv, [this](auto const&) {
+        async_send_message("userScriptsDirectory"sv, String::from_utf8_with_replacement_character(user_scripts_directory()));
+    });
+    register_interface("showUserScriptsDirectory"sv, [this](auto const&) {
+        // Starting another program takes a click, so that the page cannot do it on its own.
+        auto* page = has_client() ? client().page(page_id()) : nullptr;
+        if (!page || !page->consume_transient_user_activation())
+            return;
+        auto result = show_user_scripts_directory();
+        if (result.is_error())
+            warnln("Unable to open the userscripts folder: {}", result.error());
+        async_send_message("userScriptsStatus"sv, result.is_error() ? "Could not open the userscripts folder."_string : String {});
     });
 
     register_interface("setNewTabPageURL"sv, [this](auto const& data) {
