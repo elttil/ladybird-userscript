@@ -133,12 +133,22 @@ prerequisites and the build steps below. The `nix-command` and `flakes` experime
 To build and run Ladybird without installing it:
 
 ```
+# Release version
+nix run github:elttil/ladybird-userscript/2026.47.7-userscripts
+
+# Development version
 nix run github:elttil/ladybird-userscript
 ```
+
+The releases are listed under [tags](https://github.com/elttil/ladybird-userscript/tags), named `<version>-userscripts`.
 
 To install Ladybird on NixOS, add the flake to the inputs of your system's flake:
 
 ```nix
+# Release version
+inputs.ladybird-userscript.url = "github:elttil/ladybird-userscript/2026.47.7-userscripts";
+
+# Development version
 inputs.ladybird-userscript.url = "github:elttil/ladybird-userscript";
 ```
 
@@ -150,7 +160,8 @@ environment.systemPackages = [
 ];
 ```
 
-To update to the latest version, run `nix flake update ladybird-userscript` in the directory of your system's flake.
+To update the development version, run `nix flake update ladybird-userscript` in the directory of your system's
+flake. To update a release, change the tag in its URL to that of a newer release.
 
 > [!NOTE]
 > There is no binary cache for this flake, so Nix builds Ladybird from source on your machine, which can take an hour
