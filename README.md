@@ -6,6 +6,12 @@ userscripts and can be built and installed with Nix.
   `GM_info` are supported.
 - **Nix:** see [NixOS or with Nix](Documentation/BuildInstructionsLadybird.md#nixos-or-with-nix).
 
+The `userscripts` branch follows Ladybird's `master`. Releases are Ladybird's release tags with these changes applied,
+tagged `<version>-userscripts`, such as `2026.47.7-userscripts`.
+
+Userscript support is based on [a patch](https://boards.4chan.org/g/thread/110412846#p110419272) by an anonymous user
+on /g/.
+
 # Ladybird
 
 [Ladybird](https://ladybird.org) is a truly independent web browser, using a novel engine based on web standards.
@@ -41,7 +47,6 @@ At the moment, many core library support components are inherited from SerenityO
 ## How do I build and run this?
 
 See [build instructions](Documentation/BuildInstructionsLadybird.md) for information on how to build Ladybird.
-To build it with Nix, or to install it on NixOS, see [NixOS or with Nix](Documentation/BuildInstructionsLadybird.md#nixos-or-with-nix).
 
 Ladybird runs on Linux, macOS, Windows (with WSL2), and many other \*Nixes.
 
