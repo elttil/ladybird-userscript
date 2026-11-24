@@ -967,6 +967,9 @@
                 <button id="tab-button-blocking" class="tab-button" data-tab="blocking" role="tab">
                     Content blocking
                 </button>
+                <button id="tab-button-userscripts" class="tab-button" data-tab="userscripts" role="tab">
+                    Userscripts
+                </button>
                 <button id="tab-button-feedback" class="tab-button" data-tab="feedback" role="tab">Feedback</button>
                 <button id="tab-button-advanced" class="tab-button" data-tab="advanced" role="tab">Advanced</button>
             </div>
@@ -1481,6 +1484,22 @@
                 </div>
             </div>
 
+            <!-- Out-of-tree patch: see Libraries/LibWebView/UserScripts.h. -->
+            <div class="tab-panel" id="tab-userscripts" data-title="Userscripts">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="card-group inline-container control-row">
+                            <label for="open-userscripts-directory">
+                                Userscript directory
+                                <p id="userscripts-directory" class="description" style="overflow-wrap: anywhere"></p>
+                            </label>
+                            <button id="open-userscripts-directory" class="secondary-button">Open folder</button>
+                        </div>
+                        <p id="userscripts-status" class="description" role="status" hidden></p>
+                    </div>
+                </div>
+            </div>
+
             <div class="tab-panel" id="tab-feedback" data-title="Feedback">
                 <div class="card">
                     <div class="card-body">
@@ -1784,6 +1803,7 @@
         <script src="resource://ladybird/about-pages/settings/services.js" type="module"></script>
         <script src="resource://ladybird/about-pages/settings/startup.js" type="module"></script>
         <script src="resource://ladybird/about-pages/settings/tabs.js" type="module"></script>
+        <script src="resource://ladybird/about-pages/settings/userscripts.js" type="module"></script>
 
         <script type="module">
             import { tabForDeepLink } from "resource://ladybird/about-pages/settings/dialog-deep-link.js";
