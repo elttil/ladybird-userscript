@@ -33,6 +33,7 @@ At the moment, many core library support components are inherited from SerenityO
 ## How do I build and run this?
 
 See [build instructions](Documentation/BuildInstructionsLadybird.md) for information on how to build Ladybird.
+To build it with Nix, or to install it on NixOS, see [NixOS or with Nix](Documentation/BuildInstructionsLadybird.md#nixos-or-with-nix).
 
 Ladybird runs on Linux, macOS, Windows (with WSL2), and many other \*Nixes.
 

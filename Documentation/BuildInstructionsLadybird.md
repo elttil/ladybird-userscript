@@ -127,9 +127,47 @@ sudo xbps-install -S git bash gcc python3 curl cmake libtool zip unzip linux-hea
 
 ### NixOS or with Nix:
 
-A Nix development shell is maintained [here](https://github.com/nix-community/nix-environments/tree/master/envs/ladybird),
-in the [nix-environments](https://github.com/nix-community/nix-environments/) repository. If you encounter any problems
-building with Nix, please create an issue there.
+This repository is a Nix flake, which provides all of the dependencies itself. With Nix, you can skip the other
+prerequisites and the build steps below. The `nix-command` and `flakes` experimental features must be enabled.
+
+To build and run Ladybird without installing it:
+
+```
+nix run github:elttil/ladybird-userscript
+```
+
+To install Ladybird on NixOS, add the flake to the inputs of your system's flake:
+
+```nix
+inputs.ladybird-userscript.url = "github:elttil/ladybird-userscript";
+```
+
+Then add its package to your system packages:
+
+```nix
+environment.systemPackages = [
+  inputs.ladybird-userscript.packages.${pkgs.stdenv.hostPlatform.system}.default
+];
+```
+
+To update to the latest version, run `nix flake update ladybird-userscript` in the directory of your system's flake.
+
+> [!NOTE]
+> There is no binary cache for this flake, so Nix builds Ladybird from source on your machine, which can take an hour
+> or more. Do not set `inputs.ladybird-userscript.inputs.nixpkgs.follows`: Ladybird requires exact versions of some of
+> its dependencies, and the flake is only tested with the version of nixpkgs it pins.
+
+To work on Ladybird, enter the development shell from the root of a clone of this repository. In it, `ladybird-dev`
+builds Ladybird into `Build/nix`, and only rebuilds what changed since the last build:
+
+```bash
+# From /path/to/ladybird
+nix develop
+ladybird-dev run
+```
+
+`ladybird-dev build` builds without running Ladybird, and `ladybird-dev run` passes any further arguments to Ladybird.
+To check that the package itself still builds, run `nix build` from the root of the repository.
 
 ### macOS:
 

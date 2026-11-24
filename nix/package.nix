@@ -5,11 +5,16 @@
   stdenv,
   src,
   version,
+  # Meta/CMake/vcpkg/overlay-ports and Cargo.lock, apart from src, so that what is built from them alone only changes
+  # when they do.
+  overlayPorts,
+  cargoLock,
   callPackage,
   apple-sdk_26,
   darwinMinVersionHook,
   cacert,
   fetchFromGitHub,
+  runCommand,
   pdfjs,
   chromium-hsts-preload-list,
   cmake,
@@ -65,7 +70,6 @@
 }:
 
 let
-  overlayPorts = "${src}/Meta/CMake/vcpkg/overlay-ports";
 
   # Ladybird builds curl and nghttp2 with networking fixes of its own. Without the curl ones, RequestServer also goes
   # without CURLOPT_PIPEWAIT, which it only uses when curl defines LIBCURL_WAKES_ALL_PENDING_TRANSFERS.
@@ -91,13 +95,36 @@ let
       "${overlayPorts}/ffmpeg/0102-vulkan-av1-clear-unused-ref-frame-mvs.patch"
     ];
   });
+
+  # The development shell (nix/dev.nix) configures the source tree as it is, without the edits postPatch makes. These
+  # give it the same results from outside the tree.
+  devSupport = {
+    # ld: [...]/OESVertexArrayObject.cpp.o: undefined reference to symbol 'glIsVertexArrayOES'
+    # ld: [...]/libGL.so.1: error adding symbols: DSO missing from command line
+    # https://github.com/LadybirdBrowser/ladybird/issues/371#issuecomment-2616415434
+    ldflags = lib.optionalString stdenv.hostPlatform.isLinux "-lGL " + "-lfontconfig";
+    # The PDF viewer, patched the way the vcpkg build patches it.
+    pdfjs = runCommand "pdfjs-ladybird-${pdfjs.version}" { } ''
+      cp -r ${pdfjs}/share/pdf.js $out
+      chmod -R u+w $out
+      patch -d $out -p1 < ${overlayPorts}/pdfjs/0001-ladybird-embed.patch
+    '';
+    # pkg-config names for FFmpeg's libraries as Ladybird's own FFmpeg build installs them.
+    ffmpegPkgConfigAliases = runCommand "ffmpeg-ladybird-pkg-config" { } ''
+      mkdir -p $out/lib/pkgconfig
+      for library in libavcodec libavutil libswresample; do
+        printf 'Name: %s-ladybird\nDescription: %s\nVersion: ${ffmpeg.version}\nRequires: %s\n' \
+          "$library" "$library" "$library" > "$out/lib/pkgconfig/$library-ladybird.pc"
+      done
+    '';
+  };
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "ladybird";
   inherit src version;
 
   cargoDeps = rustPlatform.importCargoLock {
-    lockFile = "${finalAttrs.src}/Cargo.lock";
+    lockFile = cargoLock;
   };
 
   patches = lib.optionals stdenv.hostPlatform.isDarwin [
@@ -188,7 +215,7 @@ stdenv.mkDerivation (finalAttrs: {
     libxml2
     libedit
     libwebp
-    (callPackage ./llvm-libc.nix { inherit src; })
+    (callPackage ./llvm-libc.nix { inherit overlayPorts; })
     (mimalloc.overrideAttrs {
       # Ladybird uses heap APIs removed in mimalloc 3.
       version = "2.2.7";
@@ -257,10 +284,7 @@ stdenv.mkDerivation (finalAttrs: {
     "-DCMAKE_INSTALL_LIBEXECDIR=libexec"
   ];
 
-  # ld: [...]/OESVertexArrayObject.cpp.o: undefined reference to symbol 'glIsVertexArrayOES'
-  # ld: [...]/libGL.so.1: error adding symbols: DSO missing from command line
-  # https://github.com/LadybirdBrowser/ladybird/issues/371#issuecomment-2616415434
-  env.NIX_LDFLAGS = lib.optionalString stdenv.hostPlatform.isLinux "-lGL " + "-lfontconfig";
+  env.NIX_LDFLAGS = devSupport.ldflags;
 
   postInstall = lib.optionalString stdenv.hostPlatform.isDarwin ''
     mkdir -p $out/Applications $out/bin
@@ -280,6 +304,10 @@ stdenv.mkDerivation (finalAttrs: {
   # Only Ladybird and WebContent need wrapped, if Qt is enabled.
   # On linux we end up wrapping some non-Qt apps, like headless-browser.
   dontWrapQtApps = stdenv.hostPlatform.isDarwin;
+
+  passthru = {
+    inherit devSupport;
+  };
 
   meta = {
     description = "Ladybird browser with userscript support";
