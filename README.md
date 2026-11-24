@@ -1,3 +1,11 @@
+Fork of [Ladybird](https://github.com/LadybirdBrowser/ladybird) that adds support for
+userscripts and can be built and installed with Nix.
+
+- **Userscripts:** put `.user.js` files in the folder shown under Settings → Userscripts. Scripts run on pages
+  matching their `@match` or `@include` rules, and `@exclude`, `@run-at document-start`, `GM_addStyle` and
+  `GM_info` are supported.
+- **Nix:** see [NixOS or with Nix](Documentation/BuildInstructionsLadybird.md#nixos-or-with-nix).
+
 # Ladybird
 
 [Ladybird](https://ladybird.org) is a truly independent web browser, using a novel engine based on web standards.
