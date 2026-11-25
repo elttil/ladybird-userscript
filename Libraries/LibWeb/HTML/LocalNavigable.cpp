@@ -1495,6 +1495,14 @@ bool LocalNavigable::active_document_is_fully_active() const
     return m_active_document && m_active_document->is_fully_active();
 }
 
+bool LocalNavigable::active_window_has_sticky_activation() const
+{
+    if (!m_active_document)
+        return false;
+    auto window = m_active_document->window();
+    return window && window->has_sticky_activation();
+}
+
 bool LocalNavigable::active_document_is_completely_loaded() const
 {
     return m_active_document && m_active_document->is_completely_loaded();
@@ -1565,6 +1573,7 @@ ReplicatedNavigableState LocalNavigable::replicated_state() const
         .active_document_origin = m_active_document->origin(),
         .active_document_sandboxing_flag_set = m_active_document->active_sandboxing_flag_set(),
         .active_document_is_fully_active = m_active_document->is_fully_active(),
+        .active_window_has_sticky_activation = active_window_has_sticky_activation(),
         .top_level_creation_url = settings.top_level_creation_url.value(),
         .top_level_origin = settings.top_level_origin.value(),
         .has_cross_site_ancestor = active_document_has_cross_site_ancestor(),
@@ -2227,7 +2236,9 @@ static GC::Ref<NavigationParams> create_navigation_params_from_a_srcdoc_resource
     //    body: the UTF-8 encoding of documentResource, as a body
     auto response = Fetch::Infrastructure::Response::create();
     response->url_list().append(URL::about_srcdoc());
-    response->header_list()->append({ "Content-Type"sv, "text/html"sv });
+    // AD-HOC: Label the body as UTF-8, matching other engines. Otherwise the encoding sniffing algorithm may decode it
+    //         with another encoding.
+    response->header_list()->append({ "Content-Type"sv, "text/html;charset=utf-8"sv });
     auto document_resource_utf8 = MUST(document_resource.get<Utf16String>().utf16_view().to_utf8());
     response->set_body(Fetch::Infrastructure::byte_sequence_as_response_body(document_resource_utf8.bytes()));
 
@@ -2862,6 +2873,16 @@ static void create_navigation_params_by_fetching(
     state_holder->navigation_id = move(navigation_id);
 
     perform_navigation_params_fetch(realm, state_holder, completion_steps, GC::create_function(realm.heap(), GC::captures(state_holder, user_involvement, completion_steps), [](auto& state_holder, auto& user_involvement, auto& completion_steps) {
+        // AD-HOC: Tell the fetch whether a manual redirect it handed over is the navigation's response, which is the case
+        //         when neither step 22 nor step 23 returns.
+        if (auto fetch_controller = state_holder->fetch_controller) {
+            auto const& location_url = state_holder->location_url;
+            if (!state_holder->response->is_network_error() && !location_url.is_error() && !location_url.value().has_value())
+                fetch_controller->resolve_redirect(Fetch::Engine::Command::ResolveRedirect::AcceptAsFinal {});
+            else
+                fetch_controller->resolve_redirect(Fetch::Engine::Command::ResolveRedirect::Abandon {});
+        }
+
         auto result = GC::Heap::the().allocate<InternalNavigationResult>();
         result->redirected_url = move(state_holder->redirected_url);
         result->redirect_replaced_fragment = state_holder->redirect_replaced_fragment;
